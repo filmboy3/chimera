@@ -49,7 +49,7 @@ class SquatDataGenerator:
             'watch': 'wrist_sensor'   # Secondary IMU location
         }
         
-        logger.info(f"Initialized SquatDataGenerator for {self.dataset_config['total_samples']} samples")
+        logger.info(f"Initialized SquatDataGenerator for {self.dataset_config['num_samples']} samples")
     
     def _create_squat_model(self) -> str:
         """Create MuJoCo XML model for squat simulation with sensor attachment points"""
@@ -321,7 +321,7 @@ class SquatDataGenerator:
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
         
-        total_samples = self.dataset_config['total_samples']
+        total_samples = self.dataset_config['num_samples']
         dataset_name = self.dataset_config['name']
         
         logger.info(f"Generating {total_samples} samples for {dataset_name}")
@@ -418,7 +418,7 @@ def main():
     if args.samples:
         with open(args.config, 'r') as f:
             config = yaml.safe_load(f)
-        config['dataset']['total_samples'] = args.samples
+        config['dataset']['num_samples'] = args.samples
         
         # Save modified config
         temp_config = "/tmp/modified_config.yaml"

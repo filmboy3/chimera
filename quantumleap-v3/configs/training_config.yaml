@@ -1,0 +1,48 @@
+model:
+  name: "QuantumLeapV3"
+  input_channels: 13  # 6 (phone) + 6 (watch) + 1 (barometer)
+  sequence_length: 200
+  hidden_dim: 256
+  num_layers: 6
+  num_heads: 8
+  dropout: 0.1
+  
+  # Multi-task outputs
+  pose_dim: 12  # 4 joints * 3 coords
+  exercise_classes: 2  # squat vs other
+  rep_detection_dim: 1
+  form_quality_dim: 1
+  cognitive_dim: 2  # fatigue, focus
+
+training:
+  batch_size: 32
+  learning_rate: 0.001
+  weight_decay: 0.01
+  max_epochs: 50
+  patience: 10
+  
+  # Loss weights for multi-task learning
+  loss_weights:
+    pose: 1.0
+    exercise: 0.5
+    rep_detection: 2.0  # Higher weight for primary task
+    form_quality: 1.0
+    cognitive: 0.5
+
+data:
+  dataset_path: "../data/synthetic_squat_dataset.h5"
+  train_split: 0.8
+  val_split: 0.1
+  test_split: 0.1
+  num_workers: 4
+  
+augmentation:
+  noise_std: 0.01
+  time_shift_max: 10
+  amplitude_scale_range: [0.9, 1.1]
+
+logging:
+  project_name: "quantumleap-v3"
+  experiment_name: "squat-training"
+  log_every_n_steps: 50
+  save_top_k: 3
