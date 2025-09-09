@@ -44,13 +44,19 @@ class DataValidator:
             phone_imu = f['phone_imu'][:]
             watch_imu = f['watch_imu'][:]
             barometer = f['barometer'][:]
-            labels = f['labels'][:]
+            rep_detection = f['rep_detection'][:]
+            exercise_class = f['exercise_class'][:]
+            form_quality = f['form_quality'][:]
+            cognitive_state = f['cognitive_state'][:]
         
         return {
             'phone_imu': phone_imu,
             'watch_imu': watch_imu,
             'barometer': barometer,
-            'labels': labels
+            'rep_detection': rep_detection,
+            'exercise_class': exercise_class,
+            'form_quality': form_quality,
+            'cognitive_state': cognitive_state
         }
     
     def _load_human_sessions(self):
@@ -288,6 +294,7 @@ class DataValidator:
         
         # Simple threshold-based detection
         threshold = np.std(y_accel) * 1.5
+        from scipy.signal import find_peaks
         peaks, _ = find_peaks(np.abs(y_accel - np.mean(y_accel)), 
                              height=threshold, distance=50)
         
@@ -363,6 +370,20 @@ class DataValidator:
     def generate_validation_report(self, results, output_path="validation_report.json"):
         """Generate comprehensive validation report"""
         
+        # Convert numpy types to Python types for JSON serialization
+        def convert_numpy(obj):
+            if isinstance(obj, np.ndarray):
+                return obj.tolist()
+            elif isinstance(obj, (np.float32, np.float64)):
+                return float(obj)
+            elif isinstance(obj, (np.int32, np.int64)):
+                return int(obj)
+            elif isinstance(obj, dict):
+                return {k: convert_numpy(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert_numpy(item) for item in obj]
+            return obj
+        
         report = {
             'validation_timestamp': str(np.datetime64('now')),
             'data_summary': {
@@ -370,7 +391,7 @@ class DataValidator:
                 'human_sessions': len(self.human_sessions),
                 'total_human_samples': sum(len(s['sensor_data']['phone_imu']) for s in self.human_sessions)
             },
-            'validation_results': results,
+            'validation_results': convert_numpy(results),
             'recommendations': self._generate_recommendations(results)
         }
         

@@ -41,14 +41,22 @@ class CoreMLConverter:
         
         logger.info("Tracing PyTorch model...")
         
-        # Trace the model
-        traced_model = torch.jit.trace(self.model, example_input)
+        # Set model to evaluation mode
+        self.model.eval()
+        
+        # Trace the model using TorchScript
+        try:
+            traced_model = torch.jit.trace(self.model, example_input)
+            logger.info("Model traced successfully")
+        except Exception as e:
+            logger.error(f"Tracing failed: {e}")
+            traced_model = None
         
         logger.info("Converting to Core ML...")
         
         # Convert to Core ML
         coreml_model = ct.convert(
-            traced_model,
+            self.model if traced_model is None else traced_model,
             inputs=[
                 ct.TensorType(
                     name="sensor_data",
@@ -96,7 +104,15 @@ class CoreMLConverter:
         )
         
         # Save Core ML model
-        output_path = self.output_dir / "QuantumLeapV3.mlmodel"
+        if isinstance(self.output_dir, str) and self.output_dir.endswith('.mlmodel'):
+            # If output_dir is actually a full path with filename
+            output_path = Path(self.output_dir)
+            # Ensure parent directory exists
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+        else:
+            # Otherwise use default filename in the directory
+            output_path = Path(self.output_dir) / "QuantumLeapV3.mlmodel"
+            
         coreml_model.save(str(output_path))
         
         logger.info(f"Core ML model saved to: {output_path}")

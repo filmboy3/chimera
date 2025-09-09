@@ -97,6 +97,16 @@ class HumanSquatRecorder:
         
         self.is_recording = False
         logger.info("Recording session completed")
+        
+        # Automatically save data when recording completes
+        if len(self.timestamps) > 0:
+            session_data = self._create_session_data()
+            session_file = self._save_session(session_data)
+            logger.info(f"Auto-saved session data to {session_file}")
+            return session_file
+        else:
+            logger.error("No data recorded during session")
+            return None
     
     def _simulate_phone_imu(self, t):
         """Simulate realistic phone IMU data during squats"""
@@ -150,6 +160,10 @@ class HumanSquatRecorder:
             logger.warning("No recording in progress")
             return None
         
+        if not hasattr(self, 'participant_id'):
+            logger.error("No participant ID set")
+            return None
+        
         self.is_recording = False
         
         # Wait for recording thread to finish
@@ -157,8 +171,12 @@ class HumanSquatRecorder:
             self.recording_thread.join()
         
         # Save session data
-        session_data = self._create_session_data()
-        session_file = self._save_session(session_data)
+        if len(self.timestamps) > 0:
+            session_data = self._create_session_data()
+            session_file = self._save_session(session_data)
+        else:
+            logger.error("No data recorded")
+            session_file = None
         
         logger.info(f"Recording stopped and saved to {session_file}")
         return session_file

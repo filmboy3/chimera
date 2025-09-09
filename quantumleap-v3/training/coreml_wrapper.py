@@ -33,7 +33,13 @@ def convert_model_for_coreml(training_model_path):
     
     # Load training model weights
     training_model = QuantumLeapV3ForTraining(input_channels=13, hidden_dim=128, num_layers=4)
-    training_model.load_state_dict(torch.load(training_model_path, map_location='cpu'))
+    
+    # Handle different checkpoint formats
+    checkpoint = torch.load(training_model_path, map_location='cpu')
+    if 'model_state_dict' in checkpoint:
+        training_model.load_state_dict(checkpoint['model_state_dict'])
+    else:
+        training_model.load_state_dict(checkpoint)
     
     # Create Core ML compatible model
     coreml_model = QuantumLeapV3ForCoreML(input_channels=13, hidden_dim=128, num_layers=4)

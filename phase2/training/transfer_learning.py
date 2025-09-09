@@ -21,7 +21,8 @@ from sklearn.metrics import accuracy_score, classification_report
 # Import the model architecture
 import sys
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from quantumleap-v3.training.simple_trainer import QuantumLeapV3Model
+sys.path.append(str(Path(__file__).parent.parent.parent / "quantumleap-v3" / "training"))
+from simple_trainer import SimpleQuantumLeapV3
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -108,7 +109,7 @@ class HumanSquatDataset(Dataset):
         
         # Create multi-task labels
         labels = {
-            'rep_count': min(reps_in_sequence, 5),  # Cap at 5 reps
+            'rep_count': 1.0 if reps_in_sequence > 0 else 0.0,  # Binary: has reps or not
             'exercise_type': 0,  # 0 = squat
             'form_quality': session_data['analysis']['quality_metrics'].get('quality_score', 0.8),
             'cognitive_state': 0.7  # Default moderate focus
@@ -135,7 +136,7 @@ class HumanSquatDataset(Dataset):
         rep_count = torch.LongTensor([labels['rep_count']])
         exercise_type = torch.LongTensor([labels['exercise_type']])
         form_quality = torch.FloatTensor([labels['form_quality']])
-        cognitive_state = torch.FloatTensor([labels['cognitive_state']])
+        cognitive_state = torch.FloatTensor([labels['cognitive_state'], labels['cognitive_state']])  # 2D for fatigue, focus
         
         if self.transform:
             x = self.transform(x)
@@ -162,10 +163,8 @@ class TransferLearningTrainer:
         """Load pretrained model from synthetic training"""
         
         # Create model architecture
-        model = QuantumLeapV3Model(
+        model = SimpleQuantumLeapV3(
             input_channels=13,  # phone(6) + watch(6) + barometer(1)
-            sequence_length=200,
-            num_classes=6,  # rep count classes (0-5)
             hidden_dim=128
         )
         
@@ -222,7 +221,7 @@ class TransferLearningTrainer:
                               lr=learning_rate)
         
         # Multiple loss functions for multi-task learning
-        rep_criterion = nn.CrossEntropyLoss()
+        rep_criterion = nn.BCELoss()  # Binary classification for rep detection
         exercise_criterion = nn.CrossEntropyLoss()
         quality_criterion = nn.MSELoss()
         cognitive_criterion = nn.MSELoss()
@@ -261,7 +260,7 @@ class TransferLearningTrainer:
                 rep_pred, exercise_pred, quality_pred, cognitive_pred = outputs
                 
                 # Calculate losses
-                rep_loss = rep_criterion(rep_pred, rep_targets)
+                rep_loss = rep_criterion(rep_pred.mean(dim=1), rep_targets.float())  # Average over sequence
                 exercise_loss = exercise_criterion(exercise_pred, exercise_targets)
                 quality_loss = quality_criterion(quality_pred, quality_targets)
                 cognitive_loss = cognitive_criterion(cognitive_pred, cognitive_targets)
@@ -275,10 +274,10 @@ class TransferLearningTrainer:
                 
                 train_loss += total_loss.item()
                 
-                # Calculate accuracy (rep count)
-                _, predicted = torch.max(rep_pred.data, 1)
+                # Calculate accuracy (rep detection)
+                rep_pred_binary = (rep_pred.mean(dim=1) > 0.5).float()
                 train_total += rep_targets.size(0)
-                train_correct += (predicted == rep_targets).sum().item()
+                train_correct += (rep_pred_binary == rep_targets.float()).sum().item()
             
             # Validation phase
             self.model.eval()
@@ -300,7 +299,7 @@ class TransferLearningTrainer:
                     rep_pred, exercise_pred, quality_pred, cognitive_pred = outputs
                     
                     # Calculate losses
-                    rep_loss = rep_criterion(rep_pred, rep_targets)
+                    rep_loss = rep_criterion(rep_pred.mean(dim=1), rep_targets.float())
                     exercise_loss = exercise_criterion(exercise_pred, exercise_targets)
                     quality_loss = quality_criterion(quality_pred, quality_targets)
                     cognitive_loss = cognitive_criterion(cognitive_pred, cognitive_targets)
@@ -309,9 +308,9 @@ class TransferLearningTrainer:
                     val_loss += total_loss.item()
                     
                     # Calculate accuracy
-                    _, predicted = torch.max(rep_pred.data, 1)
+                    rep_pred_binary = (rep_pred.mean(dim=1) > 0.5).float()
                     val_total += rep_targets.size(0)
-                    val_correct += (predicted == rep_targets).sum().item()
+                    val_correct += (rep_pred_binary == rep_targets.float()).sum().item()
             
             # Calculate metrics
             train_loss /= len(train_loader)
