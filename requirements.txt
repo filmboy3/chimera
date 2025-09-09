@@ -1,0 +1,79 @@
+# Core ML/AI Framework
+torch>=2.0.0
+torchvision>=0.15.0
+torchaudio>=2.0.0
+pytorch-lightning>=2.0.0
+transformers>=4.30.0
+
+# MuJoCo Python Bindings
+mujoco>=2.3.7
+dm-control>=1.0.14
+
+# Computer Vision & Image Processing
+opencv-python>=4.8.0
+Pillow>=10.0.0
+imageio>=2.31.0
+
+# Scientific Computing
+numpy>=1.24.0
+scipy>=1.11.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# Audio Processing
+librosa>=0.10.0
+soundfile>=0.12.0
+torchaudio-transforms>=0.2.0
+
+# Experiment Tracking & Visualization
+wandb>=0.15.0
+tensorboard>=2.13.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.15.0
+
+# Data Processing & Utilities
+tqdm>=4.65.0
+h5py>=3.9.0
+PyYAML>=6.0
+omegaconf>=2.3.0
+hydra-core>=1.3.0
+
+# Model Optimization & Deployment
+onnx>=1.14.0
+onnxruntime>=1.15.0
+coremltools>=7.0.0
+
+# Vector Quantization (VQ-VAE)
+vector-quantize-pytorch>=1.6.0
+
+# HTTP & API
+requests>=2.31.0
+flask>=2.3.0
+fastapi>=0.100.0
+uvicorn>=0.23.0
+
+# Development & Testing
+pytest>=7.4.0
+black>=23.7.0
+flake8>=6.0.0
+mypy>=1.5.0
+jupyter>=1.0.0
+ipykernel>=6.25.0
+
+# Cloud & Infrastructure
+boto3>=1.28.0
+google-cloud-storage>=2.10.0
+
+# Hyperparameter Optimization
+optuna>=3.3.0
+
+# Audio Classification (PANNs)
+panns-inference>=0.1.0
+
+# Intent Recognition
+sentence-transformers>=2.2.0
+
+# Time Series & Signal Processing
+tslearn>=0.6.0
+pywavelets>=1.4.0

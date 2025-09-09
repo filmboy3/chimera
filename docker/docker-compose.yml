@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  chimera-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chimera-ascendant-dev
+    volumes:
+      - ../:/workspace
+      - ~/.ssh:/root/.ssh:ro
+      - ~/.gitconfig:/root/.gitconfig:ro
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - WANDB_API_KEY=${WANDB_API_KEY}
+      - MUJOCO_PATH=/opt/mujoco-2.3.7
+      - LD_LIBRARY_PATH=/opt/mujoco-2.3.7/lib
+    ports:
+      - "8888:8888"  # Jupyter
+      - "6006:6006"  # TensorBoard
+      - "8000:8000"  # FastAPI/Flask
+    stdin_open: true
+    tty: true
+    runtime: nvidia
+    shm_size: '2gb'
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
